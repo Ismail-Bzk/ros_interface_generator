@@ -12,7 +12,7 @@ template_path = "D:/dev/sdv_adas_mainline/integration/mil_scripts/ros2_scripts/T
 
 def generate_all(sdvsidl_path: str, proto_dir: str, msg_output_dir: str, srv_output_dir: str):
     os.makedirs(msg_output_dir, exist_ok=True)
-    copy_header_msg(template_path, msg_output_dir)
+    #copy_header_msg(template_path, msg_output_dir)
     os.makedirs(srv_output_dir, exist_ok=True)
     generated_msgs = set()
 

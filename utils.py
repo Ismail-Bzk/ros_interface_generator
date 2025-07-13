@@ -37,6 +37,9 @@ def remap_filename_to_ros_convention(filename: str) -> Tuple[str, str]:
     # Capitalize chaque token sauf s’il est tout en majuscule
     capitalized = [t[0].upper() + t[1:].lower() if not t.isupper() else t.capitalize() for t in tokens]
     transformed = ''.join(capitalized)
+    # Ajout de DT si le fichier est un .msg/.srv et se termine par "Request"
+    if transformed.endswith("Request"):
+        transformed += "DT"
     return original, transformed
 
 def copy_header_msg(template_path, output_dir):
