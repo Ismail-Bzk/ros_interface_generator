@@ -47,3 +47,15 @@ def copy_header_msg(template_path, output_dir):
     if not os.path.exists(dest_path):
         shutil.copy(template_path, dest_path)
         print(f"✔ Copié : {dest_path}")
+        
+        
+def parse_sdvsidl_file(sdvsidl_path):
+    """
+    return all sdvsidl files in the given path
+    """
+    sdvsidl_files = []
+    for root, _, files in os.walk(sdvsidl_path):
+        for file in files:
+            if file.endswith('.sdvsidl'):
+                sdvsidl_files.append(os.path.join(root, file))
+    return sdvsidl_files

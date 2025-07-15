@@ -1,7 +1,8 @@
 # ros_interface_generator/main.py
 import os
+from pathlib import Path
 import argparse
-from .utils import copy_header_msg, compute_topic_hint
+from .utils import copy_header_msg, compute_topic_hint, parse_sdvsidl_file
 from .extractor_sdvsidl import extract_topics_from_sdvsidl
 from .msg_generator import generate_msg_type
 from .srv_generator import write_srv_files
@@ -38,11 +39,24 @@ def generate_all(sdvsidl_path: str, proto_dir: str, msg_output_dir: str, srv_out
     print(f"  - Services : {srv_output_dir}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Générateur ROS2 à partir de .proto et .sdvsidl")
-    parser.add_argument("--sdvsidl", required=True, help="Chemin vers le fichier .sdvsidl")
-    parser.add_argument("--proto_dir", required=True, help="Répertoire contenant les fichiers .proto")
-    parser.add_argument("--msg_output", required=True, help="Répertoire de sortie des .msg")
-    parser.add_argument("--srv_output", required=True, help="Répertoire de sortie des .srv")
-    args = parser.parse_args()
+    
+    if(0):
+        parser = argparse.ArgumentParser(description="Générateur ROS2 à partir de .proto et .sdvsidl")
+        parser.add_argument("--sdvsidl", required=True, help="Chemin vers le fichier .sdvsidl")
+        parser.add_argument("--proto_dir", required=True, help="Répertoire contenant les fichiers .proto")
+        parser.add_argument("--msg_output", required=True, help="Répertoire de sortie des .msg")
+        parser.add_argument("--srv_output", required=True, help="Répertoire de sortie des .srv")
+        args = parser.parse_args()
 
-    generate_all(args.sdvsidl, args.proto_dir, args.msg_output, args.srv_output)
+        generate_all(args.sdvsidl, args.proto_dir, args.msg_output, args.srv_output)
+
+
+    sdvsidl_dir = "D:/dev/sdv_adas_mainline/.ascii_packages/adas_db/documentation/sdvsidl/swc/swc"
+    proto_dir =  "D:/dev/sdv_adas_mainline/.ascii_packages/adas_db/documentation/sdvsidl/"
+    output_base = Path(sdvsidl_dir).parents[-2]
+    sdvsidl_files = parse_sdvsidl_file(sdvsidl_dir)
+    for sdvsidl_file in sdvsidl_files:
+            file_name_no_ext = Path(sdvsidl_file).stem
+            msg_output_dir = output_base / "interfaces"/ f"generated_msg_{file_name_no_ext}"
+            srv_output_dir = output_base / "interfaces" / f"generated_srv_{file_name_no_ext}"
+            generate_all(sdvsidl_file, proto_dir, msg_output_dir, srv_output_dir)
