@@ -59,3 +59,32 @@ def parse_sdvsidl_file(sdvsidl_path):
             if file.endswith('.sdvsidl'):
                 sdvsidl_files.append(os.path.join(root, file))
     return sdvsidl_files
+
+
+def determine_ros_type_from_values(values):
+    """Détermine le type ROS approprié selon les valeurs de l'enum."""
+    min_val = min(values)
+    max_val = max(values)
+
+    if min_val >= 0:
+        if max_val <= 255:
+            return 'uint8'
+        elif max_val <= 65535:
+            return 'uint16'
+        else:
+            return 'uint32'
+    else:
+        if min_val < -32768 or max_val > 32767:
+            return 'int32'
+        elif min_val < -128 or max_val > 127:
+            return 'int16'
+        else:
+            return 'int8'
+
+def shorten_name_simple(name, prefix='C_', max_length=64):
+    """Raccourcit simplement le nom sans hash si trop long."""
+    full_name = prefix + name
+    if len(full_name) <= max_length:
+        return name
+    max_name_len = max_length - len(prefix)
+    return name[:max_name_len]

@@ -51,12 +51,30 @@ if __name__ == "__main__":
         generate_all(args.sdvsidl, args.proto_dir, args.msg_output, args.srv_output)
 
 
+    projects = [
+    "adas/project_aeb",
+    "adas/project_brake_sm",
+    "adas/project_casp",
+    "adas/project_ego_data",
+    "adas/project_hmi_manager",
+    "adas/project_isa",
+    "adas/project_path_planner",
+    "adas/project_su",
+    "adas/project_torque_sm",
+    "adas/project_vehicle_dynamics_sm",
+    "adas/project_traj_ctrl",
+    "adas/project_world_model",
+    "adas/project_cacc",
+    "adas/project_occupant_monitor",
+    "adas/project_acc_rs",
+    "adas/project_wu_adapter"
+    ]
     sdvsidl_dir = "D:/dev/sdv_adas_mainline/.ascii_packages/adas_db/documentation/sdvsidl/swc/swc"
     proto_dir =  "D:/dev/sdv_adas_mainline/.ascii_packages/adas_db/documentation/sdvsidl/"
     output_base = Path(sdvsidl_dir).parents[-2]
     sdvsidl_files = parse_sdvsidl_file(sdvsidl_dir)
     for sdvsidl_file in sdvsidl_files:
             file_name_no_ext = Path(sdvsidl_file).stem
-            msg_output_dir = output_base / "interfaces"/ f"generated_msg_{file_name_no_ext}"
-            srv_output_dir = output_base / "interfaces" / f"generated_srv_{file_name_no_ext}"
+            msg_output_dir = output_base / "interfaces1"/ f"generated_msg_{file_name_no_ext}"
+            srv_output_dir = output_base / "interfaces1" / f"generated_srv_{file_name_no_ext}"
             generate_all(sdvsidl_file, proto_dir, msg_output_dir, srv_output_dir)

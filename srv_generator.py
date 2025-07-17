@@ -5,7 +5,7 @@ import re
 from .extractor_sdvsidl import extract_rpc_methods_from_sdvsidl
 from .proto_parser import find_message_block, find_service_block, find_enum_blocks
 from .msg_generator import generate_msg_type, generate_enum_block
-from .utils import is_primitive_type
+from .utils import is_primitive_type, determine_ros_type_from_values, shorten_name_simple
 
 
 def extract_fields(block: str) -> list:
@@ -52,6 +52,8 @@ def write_srv_files(sdvsidl_path: str, proto_dir: str, output_dir: str):
             continue
         
         srv_path = os.path.join(output_dir, f"{method_name}.srv")
+        used_enums_in_file = set()  # ✅ Pour éviter les doublons des enums
+        
         with open(srv_path, 'w', encoding='utf-8') as f:
             for type_str in [input_type, output_type]:
                 block = find_message_block(proto_dir, type_str)
@@ -70,14 +72,21 @@ def write_srv_files(sdvsidl_path: str, proto_dir: str, output_dir: str):
                             f.write(f"{sub_type}{array_suffix if is_repeated else ''} {sub_name}\n")
                         else:
                             sub_base = sub_type.split('.')[-1]
-                            enum_matches = find_enum_blocks(proto_dir, sub_base)
-                            if enum_matches:
-                                for _, enums in enum_matches.items():
-                                    for enum_name, block in enums:
-                                        if enum_name.startswith(sub_base):
-                                            enum_msg = generate_enum_block(enum_name, block, field_name=sub_name)
-                                            f.write(enum_msg + "\n")
-                                            break
+                            enums = find_enum_blocks(proto_dir, sub_base)
+                            if enums:
+                                for _, enum_list in enums.items():
+                                    for name, enum_block in enum_list:
+                                        if name.startswith(sub_base):
+                                            if name not in used_enums_in_file:
+                                                enum_msg = generate_enum_block(name, enum_block, field_name=sub_name)
+                                                f.write(enum_msg + "\n")
+                                                used_enums_in_file.add(name)
+                                        else:
+                                            values = re.findall(r'=\s*(-?\d+)', enum_block)
+                                            values = [int(v) for v in values]
+                                            field_type = determine_ros_type_from_values(values)
+                                            f.write(f"{field_type} {sub_name}  # Uses enum {name}\n")
+                                            
                             else:
                                 f.write(f"{sub_base}{array_suffix if is_repeated else ''} {sub_name}\n")
                     
