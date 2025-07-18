@@ -4,7 +4,7 @@ import os
 import shutil
 
 PRIMITIVE_TYPES = {
-    "bool", "byte", "char", "string",
+    "bool", "char", "string",
     "float", "float32", "float64",
     "int8", "uint8", "int16", "uint16",
     "int32", "uint32", "int64", "uint64"
@@ -88,3 +88,8 @@ def shorten_name_simple(name, prefix='C_', max_length=64):
         return name
     max_name_len = max_length - len(prefix)
     return name[:max_name_len]
+
+
+def extract_fixed_size_from_bytes_options(options: str):
+    match = re.search(r'\(.*variable_type_max_size\)\s*=\s*(\d+)', options)
+    return int(match.group(1)) if match else None

@@ -1,7 +1,7 @@
 # ros_interface_generator/msg_generator.py
 import os
 import re
-from .utils import is_primitive_type, compute_topic_hint, copy_header_msg, determine_ros_type_from_values, shorten_name_simple
+from .utils import is_primitive_type, compute_topic_hint, copy_header_msg, determine_ros_type_from_values, shorten_name_simple, extract_fixed_size_from_bytes_options
 from .proto_parser import find_message_block, find_enum_blocks, find_message_block_with_hint
 
 def generate_enum_block(enum_name: str, block: str, field_name: str, max_line_length: int = 63) -> str:
@@ -20,7 +20,7 @@ def generate_enum_block(enum_name: str, block: str, field_name: str, max_line_le
         
         short_name = shorten_name_simple(name,max_length=max_line_length)
         line = f"{field_type} C_{short_name} = {value}"
-        if len(line) > max_line_length:
+        if len(short_name) > max_line_length:
             return (f"# ❌ Ligne trop longue générée pour l'enum : {enum_name}:\n {line}")
         lines.append(line)
         
@@ -63,7 +63,15 @@ def generate_msg_type(attr_type: str, proto_dir: str, output_dir: str, generated
             suffix = f"[{repeated_count_match.group(1)}]" if repeated_count_match else "[]"
 
             if field_type == "bytes":
-                continue
+                size = extract_fixed_size_from_bytes_options(options_block)
+                if size:
+                    f.write(f"uint8[{size}] {field_name}\n")
+                else:
+                    f.write(f"uint8 {field_name}\n")
+                    
+                    
+                
+                
             elif is_primitive_type(field_type):
                 f.write(f"{field_type}{suffix if is_repeated else ''} {field_name}\n")
             else:

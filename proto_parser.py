@@ -101,9 +101,10 @@ def find_enum_blocks(proto_dir, base_type):
                         matches.append((enum_name, enum_block))
                     if matches:
                         results[path] = matches
+                        return results
                 except (UnicodeDecodeError, OSError):
                     continue
-    return results
+    return None #results
 
 
 """
