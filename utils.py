@@ -52,12 +52,12 @@ def remap_filename_to_ros_convention(filename: str) -> Tuple[str, str]:
     # Transformer "_t" ou "_T" final → ajouter un " T" pour forcer un token séparé
     base = re.sub(r'_t$', ' T', base, flags=re.IGNORECASE)
     # Identifier les mots/tokens
-    tokens = re.findall(r'[A-Z]{2,}(?=[A-Z][a-z]|[0-9]|$)|[A-Z]?[a-z0-9]+|T', base)
+    tokens = re.findall(r'[A-Z]{2,}(?=[A-Z][a-z]|[0-9]|$)|[A-Z]?[a-z0-9]+|[A-Z]|T', base)
     # Capitalize chaque token sauf s’il est tout en majuscule
     capitalized = [t[0].upper() + t[1:].lower() if not t.isupper() else t.capitalize() for t in tokens]
     transformed = ''.join(capitalized)
-    # Ajout de DT si le fichier est un .msg/.srv et se termine par "Request"
-    if transformed.endswith("Request"):
+    # Ajout de DT si le fichier est un .msg/.srv et se termine par "Request" ou "Response"
+    if transformed.endswith("Request") or transformed.endswith("Response") :
         transformed += "DT"
     return original, transformed
 
