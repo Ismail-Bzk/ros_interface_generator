@@ -1,7 +1,7 @@
 # ros_interface_generator/msg_generator.py
 import os
 import re
-from .utils import is_primitive_type, compute_topic_hint, copy_header_msg, determine_ros_type_from_values, shorten_name_simple, extract_fixed_size_from_bytes_options
+from .utils import is_primitive_type, compute_topic_hint, copy_header_msg, determine_ros_type_from_values, shorten_name_simple, extract_fixed_size_from_bytes_options, extract_primitive_byte_size__from_type,resolve_type
 from .proto_parser import find_message_block, find_enum_blocks, find_message_block_with_hint
 
 def generate_enum_block(enum_name: str, block: str, field_name: str, max_line_length: int = 63) -> str:
@@ -12,7 +12,8 @@ def generate_enum_block(enum_name: str, block: str, field_name: str, max_line_le
     values = [int(value) for _, value in entries]
     field_type = determine_ros_type_from_values(values)
     
-    lines = [f"{field_type} {field_name}", f"# Add Enum {enum_name}"]
+    #lines = [f"{field_type} {field_name}", f"# Add Enum {enum_name}"]
+    lines = [f"# Add Enum {enum_name}"]
     
     for name, value in entries:
         if '__' in name:
@@ -73,23 +74,34 @@ def generate_msg_type(attr_type: str, proto_dir: str, output_dir: str, generated
                 
                 
             elif is_primitive_type(field_type):
-                f.write(f"{field_type}{suffix if is_repeated else ''} {field_name}\n")
+                type_size = extract_primitive_byte_size__from_type(options_block)
+                if( field_type.startswith("int") or field_type.startswith("uint")):
+                    ros_type = resolve_type(field_type, type_size)
+                    if ros_type:
+                        f.write(f"{ros_type}{suffix if is_repeated else ''} {field_name}\n")
+                    else:
+                        f.write(f"{field_type}{suffix if is_repeated else ''} {field_name}\n")
+                else:
+                    f.write(f"{field_type}{suffix if is_repeated else ''} {field_name}\n")
+                    
             else:
                 sub_base = field_type.split('.')[-1]
                 enums = find_enum_blocks(proto_dir, sub_base)
                 if enums:
                     for _, enum_list in enums.items():
                         for name, enum_block in enum_list:
+                            values = re.findall(r'=\s*(-?\d+)', enum_block)
+                            values = [int(v) for v in values]
+                            field_type = determine_ros_type_from_values(values)
+                            
                             if name.startswith(sub_base):
                                 if name not in used_enums_in_file:
+                                    f.write(f"{field_type}{suffix if is_repeated else ''} {field_name}\n")
                                     enum_msg = generate_enum_block(name, enum_block, field_name)
                                     f.write(enum_msg + "\n")
                                     used_enums_in_file.add(name)
                                 else:
-                                    values = re.findall(r'=\s*(-?\d+)', enum_block)
-                                    values = [int(v) for v in values]
-                                    field_type = determine_ros_type_from_values(values)
-                                    f.write(f"{field_type} {field_name}  # Uses enum {name}\n")
+                                    f.write(f"{field_type}{suffix if is_repeated else ''} {field_name}  # Uses enum {name}\n")
                 else:
                     #f.write(f"{sub_base}{suffix} {field_name}\n")
                     f.write(f"{sub_base}{suffix if is_repeated else ''} {field_name}\n")

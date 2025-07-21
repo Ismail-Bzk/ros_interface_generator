@@ -10,7 +10,26 @@ PRIMITIVE_TYPES = {
     "int32", "uint32", "int64", "uint64"
 }
 
+PBS_SIZE_MAP = {
+    "PBS_ONE": 8,
+    "PBS_TWO": 16,
+    "PBS_FOUR": 32,
+    "PBS_EIGHT": 64,
+}
 
+def resolve_type(base_type: str, pbs_value: str) -> str | None:
+    if pbs_value not in PBS_SIZE_MAP:
+        return None  
+
+    size_in_bits = PBS_SIZE_MAP[pbs_value]
+
+    
+    if base_type.startswith("uint"):
+        return f"uint{size_in_bits}"
+    elif base_type.startswith("int"):
+        return f"int{size_in_bits}"
+    else:
+        return None  # Type non pris en charge
 
 def to_snake_case(name: str) -> str:
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
@@ -93,3 +112,7 @@ def shorten_name_simple(name, prefix='C_', max_length=64):
 def extract_fixed_size_from_bytes_options(options: str):
     match = re.search(r'\(.*variable_type_max_size\)\s*=\s*(\d+)', options)
     return int(match.group(1)) if match else None
+
+def extract_primitive_byte_size__from_type(options: str):
+    match = re.search(r'\(.*primitive_byte_size\)\s*=\s*(PBS_\w+)', options)
+    return match.group(1) if match else None

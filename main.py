@@ -76,6 +76,6 @@ if __name__ == "__main__":
     for sdvsidl_file in sdvsidl_files:
             file_name_no_ext = Path(sdvsidl_file).stem
             if 1:#(file_name_no_ext == "HmiManager"):
-                msg_output_dir = output_base / "interfaces1"/ f"generated_msg_{file_name_no_ext}"
-                srv_output_dir = output_base / "interfaces1" / f"generated_srv_{file_name_no_ext}"
+                msg_output_dir = output_base / "interfaces"/ f"generated_msg_{file_name_no_ext}"
+                srv_output_dir = output_base / "interfaces" / f"generated_srv_{file_name_no_ext}"
                 generate_all(sdvsidl_file, proto_dir, msg_output_dir, srv_output_dir)
