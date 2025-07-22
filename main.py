@@ -69,13 +69,13 @@ if __name__ == "__main__":
     "AccApp", #rust
     "AdasLocalAdapter", #rust
     ]
-    sdvsidl_dir = "D:/dev/api/ampere/BL4.1/swc/adas" #"D:/dev/sdv_echassis_mainline/.ascii_packages/echassis_db/documentation/mbsw/sdvsidl/swc"
+    sdvsidl_dir = "D:/dev/api/ampere/BL4.1/swc/body" #"D:/dev/sdv_echassis_mainline/.ascii_packages/echassis_db/documentation/mbsw/sdvsidl/swc"
     proto_dir =  "D:/dev/api/ampere/catalog" #"D:/dev/sdv_echassis_mainline/.ascii_packages/echassis_db/documentation/mbsw/sdvsidl/catalog"
     output_base = Path(sdvsidl_dir).parents[-2]
     sdvsidl_files = parse_sdvsidl_file(sdvsidl_dir)
     for sdvsidl_file in sdvsidl_files:
             file_name_no_ext = Path(sdvsidl_file).stem
-            if (file_name_no_ext in projects):
-                msg_output_dir = output_base / "interfaces_comm"/ f"generated_msg_{file_name_no_ext}"
-                srv_output_dir = output_base / "interfaces_comm" / f"generated_srv_{file_name_no_ext}"
+            if 1: #(file_name_no_ext in projects):
+                msg_output_dir = output_base / "interfaces_body"/ f"generated_msg_{file_name_no_ext}"
+                srv_output_dir = output_base / "interfaces_body" / f"generated_srv_{file_name_no_ext}"
                 generate_all(sdvsidl_file, proto_dir, msg_output_dir, srv_output_dir)

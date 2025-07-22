@@ -40,9 +40,11 @@ def is_primitive_type(type_name: str) -> bool:
 def compute_topic_hint(topic_name: str) -> str:
     parts = topic_name.split('.')
     if len(parts) >= 4:
-        return to_snake_case(parts[-2])
-    if len(parts) == 3 and parts[1].lower() == "adas":
-        return to_snake_case(parts[-1]).split('_')[0]
+        return to_snake_case("_".join(parts[1:-1]))
+
+    if len(parts) == 3 and parts[1].lower() in ["adas",'chassis',"body"]:
+        finalpart =  to_snake_case(parts[-1]).split('_')[0]
+        return to_snake_case("_".join(parts[:-1])) + "_"+ finalpart
     return ""
 
 def remap_filename_to_ros_convention(filename: str) -> Tuple[str, str]:

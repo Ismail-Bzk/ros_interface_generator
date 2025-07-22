@@ -74,7 +74,7 @@ def sanitize_interface_files(directory: str, extension: str) -> None:
         for line in lines:
             stripped = line.strip()
             #if not stripped or stripped.startswith("#") or "=" in stripped or stripped == "---":
-            if not stripped or stripped.startswith("#") or "=" in stripped or "swl_sdv_adas_msgs" in stripped or stripped.startswith("builtin_interfaces") or stripped == "---":
+            if not stripped or stripped.startswith("#") or "=" in stripped or "swl_sdv_adas_msgs" in stripped or "ssot_abcd" in stripped or stripped.startswith("builtin_interfaces") or stripped == "---":
                 new_lines.append(line)
                 continue
 

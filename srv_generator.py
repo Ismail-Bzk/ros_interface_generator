@@ -8,6 +8,15 @@ from .msg_generator import generate_msg_type, generate_enum_block
 from .utils import is_primitive_type, determine_ros_type_from_values, shorten_name_simple, extract_fixed_size_from_bytes_options, extract_primitive_byte_size__from_type,resolve_type 
 
 
+
+LOG_WARNINGS = []
+LOG_WARNINGS_PATH = None
+
+def log_warning(msg: str):
+    LOG_WARNINGS.append(msg)
+    print(msg)
+    
+    
 def extract_fields(block: str) -> list:
     """
     Extrait les champs d'un bloc message `.proto`.
@@ -36,6 +45,10 @@ def write_srv_files(sdvsidl_path: str, proto_dir: str, output_dir: str):
         output_dir (str): Répertoire de sortie pour les `.srv`
         generated_msgs (set): Ensemble des types .msg déjà générés
     """
+    
+    global LOG_WARNINGS_PATH
+    LOG_WARNINGS_PATH = os.path.join(output_dir, "generation_warnings.txt")
+    
     field_pattern = re.compile(
         r'^\s*(repeated\s+)?([\w\.]+)\s+([\w_]+)\s*=\s*\d+(?:\s*\[(.*?)\])?',
         re.MULTILINE | re.DOTALL
