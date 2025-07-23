@@ -48,7 +48,7 @@ def generate_msg_type(attr_type: str, proto_dir: str, output_dir: str, generated
     if base_type in generated_msgs:
         if topic_hint:
             output_filename = f"{topic_hint}_{base_type}"
-            log_warning(f"⚠ Nom du message déjà utilisé. Nouveau fichier généré : {output_filename}.msg")
+            log_warning(f"⚠ Nom du message {base_type} déjà utilisé.    Nouveau fichier généré : {output_filename}.msg")
         else :
         #    output_filename = f"{base_type}.msg"
             return

@@ -51,6 +51,10 @@ def remap_filename_to_ros_convention(filename: str) -> Tuple[str, str]:
     # Supprimer l'extension si elle existe
     base = re.sub(r'\.(msg|srv)$', '', filename)
     original = base
+    
+    # Supprimer V suivi d'un chiffre s'il est à la fin du nom
+    base = re.sub(r'V[0-9]$', '', base)
+    
     # Transformer "_t" ou "_T" final → ajouter un " T" pour forcer un token séparé
     base = re.sub(r'_t$', ' T', base, flags=re.IGNORECASE)
     # Identifier les mots/tokens
