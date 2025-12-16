@@ -1,13 +1,83 @@
 # ros_interface_generator/proto_parser.py
 import os
 import re
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple,Optional
+from pathlib import Path
+            
+                        
+def find_proto_file_msg2(proto_dir, message_name, topic_hint: str = "", top_level: bool = False):
+    message_pattern = re.compile(r'\bmessage\s+' + re.escape(message_name) + r'\s*{')
 
-def find_message_block_with_hint(proto_dir, message_name, topic_hint=""):
+    # Split the hint into segments: "sdv.chassis.stand_still_assist" -> ["sdv","chassis","stand_still_assist"]
+    segments = [p for p in topic_hint.split('.') if p]
+
+    def _has_pubsub(root: str) -> bool:
+        # test by path segment
+        return any(part == "pubsub" for part in Path(root).parts)
+
+    def _search_with_hint(hint_subpath: str):
+        """Traverse proto_dir applying top_level + path filtering by hint_subpath (if non-empty).
+           Returns the matched .proto file, otherwise None.
+        """
+        for root, dirs, files in os.walk(proto_dir):
+            dirs.sort()                 # deterministic traversal
+            files = sorted(files)
+
+            # Apply top_level filter on the path (by "pubsub" segment)
+            for file in files:
+                if not file.endswith(".proto"):
+                    continue
+                has_pub = _has_pubsub(root)
+                if top_level and not has_pub:
+                    continue
+                if not top_level and has_pub:
+                    continue
+
+                path = os.path.join(root, file)
+
+                # Filter by hint subpath (case-insensitive)
+                if hint_subpath:
+                    norm_path = Path(path).as_posix()
+                    if hint_subpath not in norm_path:
+                        continue
+
+                # Read and search for the message
+                try:
+                    with open(path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                except Exception:
+                    continue
+
+                if message_pattern.search(content):
+                    return file  
+
+        return None
+
+    # 1) Decreasing attempts: "sdv/chassis/stand_still_assist" -> "sdv/chassis" -> "sdv"
+    for k in range(len(segments), 0, -1):
+        sub = "/".join(segments[:k])
+        res = _search_with_hint(sub)
+        if res:
+            return res
+
+    # 2) Final attempt without hint (same top_level)
+    res = _search_with_hint("")
+    if res:
+        return res
+
+    # 3) Strategy fallback: if top_level=True, retry with top_level=False (using the same reduction logic)
+    if top_level:
+        return find_proto_file_msg2(proto_dir, message_name, topic_hint, top_level=False)
+
+    # Not found
+    return None
+
+def find_message_block_with_hint(proto_dir, message_name, topic_hint="",top_level=False):
     message_pattern = re.compile(r'message\s+' + re.escape(message_name) + r'\s*{')
     for root, _, files in os.walk(proto_dir):
-        for file in files:
-            if file.endswith(".proto") and (not topic_hint or topic_hint in file):
+        for file in sorted(files):
+            if file.endswith(".proto") and (not topic_hint or topic_hint in file) and (not top_level or 'topics' in file):
+
                 path = os.path.join(root, file)
                 try:
                     with open(path, 'r', encoding='utf-8') as f:
@@ -29,16 +99,16 @@ def find_message_block_with_hint(proto_dir, message_name, topic_hint=""):
                                     end_idx += 1
                                     break
                             end_idx += 1
-                        return content[start_idx:end_idx]
+                        return content[start_idx:end_idx],file
                 except Exception:
                     continue
-    return None
+    return None,None
 
 
 def find_message_block(proto_dir, message_name):
     message_pattern = re.compile(r'message\s+' + re.escape(message_name) + r'\s*{')
     for root, _, files in os.walk(proto_dir):
-        for file in files:
+        for file in sorted(files):
             if file.endswith(".proto"):
                 path = os.path.join(root, file)
                 try:
@@ -61,10 +131,10 @@ def find_message_block(proto_dir, message_name):
                                     end_idx += 1
                                     break
                             end_idx += 1
-                        return content[start_idx:end_idx]
+                        return content[start_idx:end_idx],file
                 except (UnicodeDecodeError, OSError):
                     continue
-    return None
+    return None,None
 
 
 def find_enum_blocks(proto_dir, base_type):
@@ -73,7 +143,7 @@ def find_enum_blocks(proto_dir, base_type):
     results = {}
 
     for root, _, files in os.walk(proto_dir):
-        for file in files:
+        for file in sorted(files):
             if file.endswith(".proto"):
                 path = os.path.join(root, file)
                 try:
@@ -104,26 +174,9 @@ def find_enum_blocks(proto_dir, base_type):
                         return results
                 except (UnicodeDecodeError, OSError):
                     continue
-    return None #results
+    return None 
 
 
-"""
-find_service_block(proto_dir, method_name, service_name, topic_hint="") -> Tuple[str, str]:
-
-    Recherche une méthode `rpc` à l’intérieur d’un service défini dans les fichiers `.proto`.
-
-    La méthode est extraite uniquement si elle appartient bien à un service spécifique (ex: `HMIMgrAlertDisplayService`)
-    contenu dans un fichier `.proto` correspondant à un contexte (`topic_hint`).
-
-    Args:
-        proto_dir (str): Dossier racine contenant les fichiers `.proto`.
-        method_name (str): Nom de la méthode RPC à rechercher.
-        service_name (str): Nom du service dans lequel la méthode doit apparaître.
-        topic_hint (str, optional): Indice pour filtrer les fichiers `.proto` (ex: "hmi", "planning").
-
-    Returns:
-        Tuple[str, str]: Le type d’entrée et le type de sortie utilisés dans la méthode RPC (input_type, output_type),
-"""
 def find_service_block(proto_dir, method_name, service_name, topic_hint=""):
     method_pattern = re.compile(
         r'rpc\s+' + re.escape(method_name) + r'\s*\((.*?)\)\s+returns\s+\((.*?)\)', re.DOTALL
@@ -131,7 +184,7 @@ def find_service_block(proto_dir, method_name, service_name, topic_hint=""):
     service_header_pattern = re.compile(r'service\s+' + re.escape(service_name) + r'\s*{')
 
     for root, _, files in os.walk(proto_dir):
-        for file in files:
+        for file in sorted(files):
             if file.endswith(".proto") and (not topic_hint or topic_hint in file):
                 path = os.path.join(root, file)
                 try:
@@ -142,7 +195,7 @@ def find_service_block(proto_dir, method_name, service_name, topic_hint=""):
 
                 match = service_header_pattern.search(content)
                 if match:
-                    start_idx = match.end()  # début du bloc après '{'
+                    start_idx = match.end()  # start of the block after '{'
                     brace_count = 1
                     idx = start_idx
 
@@ -154,16 +207,14 @@ def find_service_block(proto_dir, method_name, service_name, topic_hint=""):
                         idx += 1
 
                     service_block = content[match.start():idx]
-                    print(f"✅ Service '{service_name}' trouvé dans {file}")
+                    print(f"Service '{service_name}' found in {file}")
 
                     method_match = method_pattern.search(service_block)
                     if method_match:
                         request_type = method_match.group(1).strip()
                         response_type = method_match.group(2).strip()
-                        print(f"    Méthode '{method_name}':")
+                        print(f"    Method :  '{method_name}':")
                         print(f"        Input: {request_type}")
                         print(f"        Output: {response_type}")
                         return request_type, response_type
     return None, None
-
-
